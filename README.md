@@ -29,6 +29,37 @@ cd PrivateProduction/Utilities
 cp submit/settings_template.cfg submit/settings.cfg
 ```
 
+When switching between environments, you need to deactivate the CMSSW
+environment. For some reason, this is not set as an alias by default! When you
+want to deactivate your environment, run the following command.
+
+```bash
+eval `scram unsetenv -sh`
+```
+
+As a tip, you can add an alias to this in your `~/.bashrc` file so that you can
+run this more easily. To do this, add the following line to your `~/.bashrc` file.
+
+```bash
+alias uncmsenv='eval `scram unsetenv -sh`'
+```
+
+### Setting up a fork of this package
+
+It might be easier to create a fork of this repository so you can more easily
+transfer changes and config files between your CMSSW environments. Fork the
+repository through GitHub and then follow the setup instructions above, but
+replace `jemarq04` with your GitHub username. To still have access to any
+changes/fixes implemented from here, add this as an "upstream" repository by
+running the following command.
+
+```bash
+git remote add upstream git@github.com:jemarq04/PrivateProduction-Utilities
+```
+
+Then, when you want updates from this repository, just run `git pull upstream
+main` to pull changes from this main branch to your current working branch.
+
 ## Adding new fragments
 
 If you want to add new CMS config fragment, just copy and paste it into
@@ -76,6 +107,11 @@ RECODataset:
 MINIDataset:
 ```
 
+These sections are the outputs from the CRAB jobs to help each job run in
+sequence. For example, the "GENSIMDataset" field would be the DAS identifier for
+the output from your GENSIM CRAB jobs. That way, when you submit HLT jobs, the
+package knows what to use as the input dataset.
+
 Instead of using any command-line options to specify the year/step/name, you
 can edit all of these values manually in `submit/settings.cfg` and then simply
 run `crabSubmit.sh` with no arguments. The script will submit CRAB jobs based
@@ -94,6 +130,47 @@ status -d <CRAB_DIR>`. This dataset name will end in "USER" (instead of the
 usual "GENSIM"). Copy this and add it to the "GENSIMDataset" option in
 `settings.cfg`. Then it can be retrieved as the input dataset for the next set
 of CRAB jobs.
+
+### Tips with CRAB jobs
+
+After submitting your job with `crabSubmit.sh`, there are some helpful commands
+available to you.
+
+- `crab status -d <DIR>`: This lets you get the status of your jobs. Idle jobs
+are pending and are waiting for resources to be free to run. Transferring jobs
+have finished and are in the "post-processing" stage, often waiting to establish
+a connection with your desired output storage. Removed jobs often exceeded
+limitations (e.g. memory) and were killed, but these are often automatically
+re-submitted by CRAB to try again. If you have any failing jobs, you can view
+more information using the `--verboseErrors` flag when you run this command.
+It'll print a bit of its message and the error code, which you can look up.
+  - The status printout also gives some helpful links and information. The
+  "dashboard monitoring" page is a great way to visually check on your jobs'
+  statuses. You can even set a refresh rate at the top right. There should also
+  be information about the "published" dataset, which a DAS identifier for your
+  output dataset from these jobs. This dataset can be found through the CMS DAS
+  service and then used as an input dataset for other jobs (handled by this
+  package).
+- `crab resubmit -d <DIR>`: This lets you resubmit any failed jobs. Sometimes, a
+job gets caught trying to access remote files or maybe there's an odd memory bug
+that comes up sometimes, affecting your jobs. These may not be automatically
+re-run by CRAB, so you need to request it with the `resubmit` subcommand. These
+jobs are already at the maximum (2GB) for multi-threaded requests, but you can
+always request more time on resubmissions with `--maxjobruntime` (in minutes).
+- `crab report -d <DIR>`: This gives you a report on your submitted jobs
+(generally done when the jobs are finished or consistently failing). If
+everything finished successfully, this isn't too helpful with MC. With data, it
+can tell you what lumi sections were processed. If there were any jobs that kept
+failing, this will create a `failedFiles.json` file in `<DIR>/results/` that
+will tell you which job ID failed and which files it attempted to process.
+- `crab kill -d <DIR>`: This stops the jobs from running -- mostly helpful if
+you notice something wrong with the job itself and you know they'll eventually fail.
+
+Some helpful CRAB pages to bookmark:
+
+- [CRAB file configurations](https://twiki.cern.ch/twiki/bin/view/CMSPublic/CRAB3ConfigurationFile):
+Describes the configurations used in `scripts/crab.py`.
+- [General guide for CRAB](https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideCrab)
 
 ### Submitting jobs with custom gridpacks
 

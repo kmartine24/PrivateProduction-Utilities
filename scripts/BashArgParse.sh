@@ -52,14 +52,14 @@ function print_usage() {
   local reqopts=$(egrep -i '#@reqopt[[:space:]]' $__SCRIPT_PATH | sed -E 's/^[[:space:]]*#@reqopt[[:space:]]+(.*)/\1/' | xargs)
   [[ -n $reqopts ]] && local opts="$opts $reqopts"
   local args=$(egrep -i '#@arg[[:space:]]' $__SCRIPT_PATH | sed -E 's/^[[:space:]]*#@arg[[:space:]]+(.*)/\1/' | xargs)
-  echo "usage: $__SCRIPT_PATH $opts $args"
+  echo "usage: $(basename $__SCRIPT_PATH) $opts $args"
 }
 
 function print_help() {
   # Prints help based on opts/args defined with '#--:' comments
   local desc=$(egrep -i '#@desc' $__SCRIPT_PATH | sed -E 's/^[[:space:]]*#@desc[[:space:]]+(.*)/\1/')
-  local optshelp=$(egrep -i '#@(req)?opt' $__SCRIPT_PATH | sed -E 's/^[[:space:]]*#@(req)?optdesc[[:space:]]+(.*)/   \2\n/' | sed -E 's/^[[:space:]]*#@(req)?opt[[:space:]]+(.*)/ \2/')
-  local argshelp=$(egrep -i '#@arg' $__SCRIPT_PATH | sed -E 's/^[[:space:]]*#@argdesc[[:space:]]+(.*)/   \1\n/' | sed -E 's/^[[:space:]]*#@arg[[:space:]]+(.*)/ \1/')
+  local optshelp=$(egrep -i '#@(req)?opt' $__SCRIPT_PATH | sed -E 's/^[[:space:]]*#@(req)?optdesc[[:space:]]+(.*)/   \2/' | sed -E 's/^[[:space:]]*#@(req)?opt[[:space:]]+(.*)/ \2/')
+  local argshelp=$(egrep -i '#@arg' $__SCRIPT_PATH | sed -E 's/^[[:space:]]*#@argdesc[[:space:]]+(.*)/   \1/' | sed -E 's/^[[:space:]]*#@arg[[:space:]]+(.*)/ \1/')
 
   print_usage
   if [[ -n $desc ]]; then
@@ -88,7 +88,7 @@ function die() {
 
 function check_valid_option() {
   # check_valid_option NAME OPTION [OPTION ...]
-  name="$1"
+  local name="$1"
   shift
   local options=("$@")
   [[ " ${options[*]} " =~ [[:space:]]${!name}[[:space:]] ]] || die "invalid $name: ${!name}. must be one of ${options[*]}"
